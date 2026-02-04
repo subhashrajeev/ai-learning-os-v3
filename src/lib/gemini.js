@@ -3,7 +3,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Initialize Gemini client
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
+const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+if (!apiKey) {
+    console.warn('GEMINI_API_KEY is missing!');
+}
+const genAI = new GoogleGenerativeAI(apiKey);
 
 // Get the model
 function getModel() {

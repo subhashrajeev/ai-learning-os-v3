@@ -16,6 +16,8 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
+gemini_key.txt
 
 # Debug logs
 npm-debug.log*
