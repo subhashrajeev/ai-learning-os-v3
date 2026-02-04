@@ -8,12 +8,18 @@ import {
     XCircle,
     ArrowRight,
     RotateCcw,
-    Award,
     Target,
     Lightbulb,
     HelpCircle,
+    ShieldCheck,
 } from 'lucide-react';
-import { loadCurriculum, loadProgress, updateQuizScore } from '@/lib/storage';
+import {
+    loadCurriculum,
+    loadProgress,
+    updateQuizScore,
+    getDueReviewItems,
+    updateReviewFromScore,
+} from '@/lib/storage';
 import { generateQuizQuestions } from '@/lib/gemini';
 
 export default function PracticeMode({ profile }) {
@@ -28,14 +34,27 @@ export default function PracticeMode({ profile }) {
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
     const [quizComplete, setQuizComplete] = useState(false);
+    const [dueReviews, setDueReviews] = useState([]);
+    const [reviewUpdate, setReviewUpdate] = useState(null);
 
     useEffect(() => {
         const saved = loadCurriculum();
         const savedProgress = loadProgress();
         setCurriculum(saved);
         setProgress(savedProgress);
+        setDueReviews(getDueReviewItems());
         setLoading(false);
     }, []);
+
+    useEffect(() => {
+        if (!quizComplete || !selectedTopic || reviewUpdate) return;
+        const percentage = score.total ? Math.round((score.correct / score.total) * 100) : 0;
+        const update = updateReviewFromScore(selectedTopic, percentage, {
+            topic: selectedTopic,
+            lastScore: percentage,
+        });
+        setReviewUpdate(update);
+    }, [quizComplete, selectedTopic, reviewUpdate, score.correct, score.total]);
 
     const handleSelectTopic = async (topic) => {
         setSelectedTopic(topic);
@@ -91,6 +110,8 @@ export default function PracticeMode({ profile }) {
         setShowResult(false);
         setScore({ correct: 0, total: 0 });
         setQuizComplete(false);
+        setReviewUpdate(null);
+        setDueReviews(getDueReviewItems());
     };
 
     if (loading) {
@@ -121,6 +142,24 @@ export default function PracticeMode({ profile }) {
                     </p>
                 </motion.div>
 
+                {dueReviews.length > 0 && (
+                    <motion.div
+                        className="glass-card"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.05 }}
+                        style={{ marginBottom: 'var(--space-xl)' }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                            <ShieldCheck size={18} style={{ color: 'var(--warning)' }} />
+                            <strong>Reviews Due Today</strong>
+                        </div>
+                        <p style={{ color: 'var(--dark-text-secondary)' }}>
+                            {dueReviews.length} topic(s) ready for spaced repetition.
+                        </p>
+                    </motion.div>
+                )}
+
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -138,46 +177,52 @@ export default function PracticeMode({ profile }) {
                         </div>
                     ) : (
                         <div style={{ display: 'grid', gap: 'var(--space-md)' }}>
-                            {topics.map((topic, index) => (
-                                <motion.button
-                                    key={topic}
-                                    className="glass-card-elevated"
-                                    style={{
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                    }}
-                                    whileHover={{ scale: 1.01, borderColor: 'var(--claude-orange)' }}
-                                    whileTap={{ scale: 0.99 }}
-                                    onClick={() => handleSelectTopic(topic)}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                                        <div style={{
-                                            width: 48,
-                                            height: 48,
-                                            borderRadius: 'var(--radius-md)',
-                                            background: 'rgba(204, 120, 92, 0.2)',
+                            {topics.map((topic, index) => {
+                                const isDue = dueReviews.some((review) => review.front === topic);
+                                return (
+                                    <motion.button
+                                        key={topic}
+                                        className="glass-card-elevated"
+                                        style={{
+                                            textAlign: 'left',
+                                            cursor: 'pointer',
                                             display: 'flex',
+                                            justifyContent: 'space-between',
                                             alignItems: 'center',
-                                            justifyContent: 'center',
-                                        }}>
-                                            <Brain size={24} style={{ color: 'var(--claude-orange)' }} />
-                                        </div>
-                                        <div>
-                                            <div style={{ fontWeight: 600 }}>{topic}</div>
-                                            <div style={{ fontSize: '0.875rem', color: 'var(--dark-text-secondary)' }}>
-                                                5 questions
+                                        }}
+                                        whileHover={{ scale: 1.01, borderColor: 'var(--accent)' }}
+                                        whileTap={{ scale: 0.99 }}
+                                        onClick={() => handleSelectTopic(topic)}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.05 }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                                            <div style={{
+                                                width: 48,
+                                                height: 48,
+                                                borderRadius: 'var(--radius-md)',
+                                                background: 'rgba(91, 234, 255, 0.2)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                            }}>
+                                                <Brain size={24} style={{ color: 'var(--accent)' }} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 600 }}>{topic}</div>
+                                                <div style={{ fontSize: '0.875rem', color: 'var(--dark-text-secondary)' }}>
+                                                    5 questions
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <ArrowRight size={20} style={{ color: 'var(--dark-text-secondary)' }} />
-                                </motion.button>
-                            ))}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                                            {isDue && <span className="badge badge-warning">Review</span>}
+                                            <ArrowRight size={20} style={{ color: 'var(--dark-text-secondary)' }} />
+                                        </div>
+                                    </motion.button>
+                                );
+                            })}
                         </div>
                     )}
                 </motion.div>
@@ -201,7 +246,7 @@ export default function PracticeMode({ profile }) {
                     transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                     style={{ marginBottom: 'var(--space-lg)' }}
                 >
-                    <Brain size={48} style={{ color: 'var(--claude-orange)' }} />
+                    <Brain size={48} style={{ color: 'var(--accent)' }} />
                 </motion.div>
                 <h3>Generating Quiz...</h3>
                 <p style={{ color: 'var(--dark-text-secondary)' }}>
@@ -267,6 +312,12 @@ export default function PracticeMode({ profile }) {
                         </div>
                     </div>
                 </div>
+
+                {reviewUpdate?.dueDate && (
+                    <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
+                        Next review scheduled for {new Date(reviewUpdate.dueDate).toLocaleDateString()}
+                    </div>
+                )}
 
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-md)' }}>
                     <motion.button

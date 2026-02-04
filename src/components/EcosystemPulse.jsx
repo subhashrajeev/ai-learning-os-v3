@@ -7,14 +7,13 @@ import {
     TrendingUp,
     Bookmark,
     BookmarkCheck,
-    ExternalLink,
     RefreshCw,
     Sparkles,
-    Filter,
     Clock,
 } from 'lucide-react';
 import { loadSavedItems, addSavedItem, removeSavedItem } from '@/lib/storage';
 import { generateEcosystemUpdates } from '@/lib/gemini';
+import { upsertMemoryEntries } from '@/lib/memory';
 
 export default function EcosystemPulse({ profile }) {
     const [updates, setUpdates] = useState(null);
@@ -53,7 +52,7 @@ export default function EcosystemPulse({ profile }) {
         setRefreshing(false);
     };
 
-    const handleSaveItem = (item) => {
+    const handleSaveItem = async (item) => {
         const isAlreadySaved = savedItems.some(s => s.headline === item.headline);
 
         if (isAlreadySaved) {
@@ -63,6 +62,19 @@ export default function EcosystemPulse({ profile }) {
         } else {
             const updated = addSavedItem(item);
             setSavedItems(updated);
+
+            await upsertMemoryEntries([
+                {
+                    id: `pulse-${item.id || Date.now()}`,
+                    content: `${item.headline} | ${item.description} | ${item.whyItMatters}`,
+                    metadata: {
+                        tag: item.tag,
+                        relevance: item.relevanceScore,
+                        source: 'ecosystem',
+                        savedAt: new Date().toISOString(),
+                    },
+                },
+            ]);
         }
     };
 
@@ -96,7 +108,7 @@ export default function EcosystemPulse({ profile }) {
                     transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                     style={{ marginBottom: 'var(--space-lg)' }}
                 >
-                    <Radio size={48} style={{ color: 'var(--claude-orange)' }} />
+                    <Radio size={48} style={{ color: 'var(--accent)' }} />
                 </motion.div>
                 <h3>Scanning the AI Ecosystem...</h3>
                 <p style={{ color: 'var(--dark-text-secondary)' }}>
@@ -117,7 +129,7 @@ export default function EcosystemPulse({ profile }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-sm)' }}>
-                            <Radio size={24} style={{ color: 'var(--claude-orange)' }} />
+                            <Radio size={24} style={{ color: 'var(--accent)' }} />
                             <h1>Ecosystem Pulse</h1>
                         </div>
                         <p style={{ color: 'var(--dark-text-secondary)' }}>
@@ -157,8 +169,8 @@ export default function EcosystemPulse({ profile }) {
                         style={{
                             marginTop: 'var(--space-lg)',
                             padding: 'var(--space-md) var(--space-lg)',
-                            background: 'linear-gradient(135deg, rgba(204, 120, 92, 0.2), rgba(212, 162, 127, 0.1))',
-                            border: '1px solid var(--claude-orange)',
+                            background: 'linear-gradient(135deg, rgba(91, 234, 255, 0.18), rgba(34, 197, 94, 0.08))',
+                            border: '1px solid var(--accent)',
                             borderRadius: 'var(--radius-lg)',
                         }}
                     >
@@ -168,8 +180,8 @@ export default function EcosystemPulse({ profile }) {
                             gap: 'var(--space-sm)',
                             marginBottom: 'var(--space-sm)',
                         }}>
-                            <Sparkles size={18} style={{ color: 'var(--claude-orange)' }} />
-                            <span style={{ fontWeight: 600, color: 'var(--claude-orange)' }}>Weekly Digest</span>
+                            <Sparkles size={18} style={{ color: 'var(--accent)' }} />
+                            <span style={{ fontWeight: 600, color: 'var(--accent)' }}>Weekly Digest</span>
                         </div>
                         <p style={{ color: 'var(--dark-text)', fontSize: '0.95rem' }}>
                             {updates.weeklyDigest}
@@ -210,7 +222,7 @@ export default function EcosystemPulse({ profile }) {
                                             whileHover={{ scale: 1.1 }}
                                             whileTap={{ scale: 0.9 }}
                                         >
-                                            <BookmarkCheck size={18} style={{ color: 'var(--claude-orange)' }} />
+                                            <BookmarkCheck size={18} style={{ color: 'var(--accent)' }} />
                                         </motion.button>
                                     </div>
                                     <p className="pulse-description">{item.description}</p>
@@ -306,7 +318,7 @@ export default function EcosystemPulse({ profile }) {
                                             whileTap={{ scale: 0.9 }}
                                         >
                                             {isItemSaved(item) ? (
-                                                <BookmarkCheck size={18} style={{ color: 'var(--claude-orange)' }} />
+                                                <BookmarkCheck size={18} style={{ color: 'var(--accent)' }} />
                                             ) : (
                                                 <Bookmark size={18} />
                                             )}

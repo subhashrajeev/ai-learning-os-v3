@@ -95,6 +95,7 @@ Create a comprehensive but focused lesson with:
 5. **Key Takeaways** (3-4 bullet points)
 6. **Reflection Question** (Thought-provoking question to solidify learning)
 7. **Quick Challenge** (Optional stretch activity)
+8. **TL;DR Summary** (2-3 bullet points)
 
 FORMAT: Use markdown with clear headers. Include code blocks where relevant.
 Make it engaging, practical, and actionable. Use analogies for complex concepts.`;
@@ -157,6 +158,70 @@ OUTPUT FORMAT (JSON ONLY, no markdown):
     } catch (error) {
         console.error('Error generating quiz:', error);
         throw new Error('Failed to generate quiz. Please try again.');
+    }
+}
+
+// Generate proactive daily suggestions
+export async function generateProactiveSuggestions(profile, progress, context = {}) {
+    const model = getModel();
+
+    const prompt = `You are an AI learning concierge. Create 3 proactive, high-impact suggestions for today.
+
+PROFILE:
+- Role: ${profile.role}
+- Goal: ${profile.goal}
+- Time Available: ${profile.timePerDay}
+- Learning Style: ${profile.learningStyle}
+
+PROGRESS CONTEXT:
+- Current Day: ${progress.currentDay}
+- Lessons Completed: ${progress.lessonsCompleted}
+- Quiz Average: ${progress.quizScore}%
+- Due Reviews: ${context.dueReviews || 0}
+- Memory Highlights: ${context.memoryHighlights || 0}
+
+Each suggestion should include:
+- title (short)
+- action (specific, doable within their time)
+- why (brief reason personalized to their goal)
+- tag (Focus/Review/Build/Reflect)
+
+OUTPUT FORMAT (JSON ONLY):
+{
+  "suggestions": [
+    { "title": "...", "action": "...", "why": "...", "tag": "Review" }
+  ]
+}`;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        return JSON.parse(cleanText);
+    } catch (error) {
+        console.error('Error generating suggestions:', error);
+        return {
+            suggestions: [
+                {
+                    title: 'Quick Review Sprint',
+                    action: 'Review 2 key concepts from your last lesson and summarize them in 3 bullet points.',
+                    why: 'Spaced repetition cements long-term memory for your goal.',
+                    tag: 'Review',
+                },
+                {
+                    title: 'Mini Build',
+                    action: 'Implement a tiny demo related to today’s topic in 20 minutes.',
+                    why: 'Hands-on practice accelerates practical mastery.',
+                    tag: 'Build',
+                },
+                {
+                    title: 'Reflect & Refocus',
+                    action: 'Write one insight and one question from your learning today.',
+                    why: 'Reflection improves retention and clarifies next steps.',
+                    tag: 'Reflect',
+                },
+            ],
+        };
     }
 }
 

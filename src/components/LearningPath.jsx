@@ -11,8 +11,9 @@ import {
     Target,
     Award,
     RefreshCw,
+    ShieldCheck,
 } from 'lucide-react';
-import { loadProgress, loadCurriculum, saveCurriculum } from '@/lib/storage';
+import { loadProgress, loadCurriculum, saveCurriculum, getDueReviewItems } from '@/lib/storage';
 import { generateCurriculum } from '@/lib/gemini';
 
 export default function LearningPath({ profile, onStartLesson }) {
@@ -20,12 +21,14 @@ export default function LearningPath({ profile, onStartLesson }) {
     const [curriculum, setCurriculum] = useState(null);
     const [loading, setLoading] = useState(true);
     const [regenerating, setRegenerating] = useState(false);
+    const [reviewQueue, setReviewQueue] = useState([]);
 
     useEffect(() => {
         const saved = loadCurriculum();
         const savedProgress = loadProgress();
         setCurriculum(saved);
         setProgress(savedProgress);
+        setReviewQueue(getDueReviewItems());
         setLoading(false);
     }, []);
 
@@ -54,7 +57,7 @@ export default function LearningPath({ profile, onStartLesson }) {
             case 'completed':
                 return <CheckCircle2 size={18} style={{ color: 'var(--success)' }} />;
             case 'active':
-                return <Play size={18} style={{ color: 'var(--claude-orange)' }} />;
+                return <Play size={18} style={{ color: 'var(--accent)' }} />;
             case 'skipped':
                 return <Circle size={18} style={{ color: 'var(--warning)' }} />;
             case 'upcoming':
@@ -138,7 +141,7 @@ export default function LearningPath({ profile, onStartLesson }) {
                     flexWrap: 'wrap'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                        <Clock size={18} style={{ color: 'var(--claude-orange)' }} />
+                        <Clock size={18} style={{ color: 'var(--accent)' }} />
                         <span style={{ color: 'var(--dark-text-secondary)' }}>
                             ~{curriculum.totalEstimatedHours || 5} hours total
                         </span>
@@ -147,6 +150,12 @@ export default function LearningPath({ profile, onStartLesson }) {
                         <Target size={18} style={{ color: 'var(--success)' }} />
                         <span style={{ color: 'var(--dark-text-secondary)' }}>
                             {progress?.completedDays?.length || 0} of {curriculum.roadmap.length} completed
+                        </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                        <ShieldCheck size={18} style={{ color: 'var(--warning)' }} />
+                        <span style={{ color: 'var(--dark-text-secondary)' }}>
+                            {reviewQueue.length} reviews due
                         </span>
                     </div>
                     {curriculum.skillsYouWillGain && (
@@ -164,6 +173,7 @@ export default function LearningPath({ profile, onStartLesson }) {
             <div className="timeline">
                 {curriculum.roadmap.map((item, index) => {
                     const status = getDayStatus(item.day);
+                    const isDue = reviewQueue.some((review) => review.front === item.topic);
 
                     return (
                         <motion.div
@@ -196,6 +206,7 @@ export default function LearningPath({ profile, onStartLesson }) {
 
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
                                         {getStatusIcon(status)}
+                                        {isDue && <span className="badge badge-warning">Review Due</span>}
                                         {status === 'completed' && (
                                             <span className="badge badge-success">Completed</span>
                                         )}
@@ -297,7 +308,7 @@ export default function LearningPath({ profile, onStartLesson }) {
                     style={{ marginTop: 'var(--space-2xl)' }}
                 >
                     <h3 style={{ marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                        <Award size={20} style={{ color: 'var(--claude-orange)' }} />
+                        <Award size={20} style={{ color: 'var(--accent)' }} />
                         After This Sprint
                     </h3>
                     <p style={{ color: 'var(--dark-text-secondary)' }}>

@@ -6,16 +6,24 @@ import {
     TrendingUp,
     Clock,
     Target,
-    Award,
-    BookOpen,
-    Brain,
+    Award,\n    Brain,
     Flame,
     ChevronRight,
     Sparkles,
     Play,
+    ShieldCheck,
+    Layers,
 } from 'lucide-react';
-import { loadProgress, loadCurriculum, loadStreak, updateStreak } from '@/lib/storage';
-import { analyzeAndAdapt } from '@/lib/gemini';
+import {
+    loadProgress,
+    loadCurriculum,
+    updateStreak,
+    getDueReviewItems,
+    loadReviews,
+} from '@/lib/storage';
+import { analyzeAndAdapt, generateProactiveSuggestions } from '@/lib/gemini';
+import { queryMemoryEntries } from '@/lib/memory';
+import { getNextReviewDate } from '@/lib/spacedRepetition';
 
 export default function Dashboard({ profile, onStartLesson, onViewChange }) {
     const [progress, setProgress] = useState(null);
@@ -23,6 +31,9 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
     const [streak, setStreak] = useState(null);
     const [adaptation, setAdaptation] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [reviewQueue, setReviewQueue] = useState([]);
+    const [memoryHighlights, setMemoryHighlights] = useState([]);
+    const [suggestions, setSuggestions] = useState([]);
 
     useEffect(() => {
         loadData();
@@ -32,12 +43,13 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
         const savedProgress = loadProgress();
         const savedCurriculum = loadCurriculum();
         const savedStreak = updateStreak();
+        const dueReviews = getDueReviewItems();
 
         setProgress(savedProgress);
         setCurriculum(savedCurriculum);
         setStreak(savedStreak);
+        setReviewQueue(dueReviews);
 
-        // Get AI adaptation suggestions
         if (profile && savedProgress && savedCurriculum) {
             try {
                 const adapt = await analyzeAndAdapt(profile, savedProgress, savedCurriculum);
@@ -45,6 +57,17 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
             } catch (e) {
                 console.error('Error getting adaptation:', e);
             }
+        }
+
+        if (profile) {
+            const memory = await queryMemoryEntries(profile.goal || 'AI learning', 3);
+            setMemoryHighlights(memory);
+
+            const proactive = await generateProactiveSuggestions(profile, savedProgress, {
+                dueReviews: dueReviews.length,
+                memoryHighlights: memory.length,
+            });
+            setSuggestions(proactive?.suggestions || []);
         }
 
         setLoading(false);
@@ -68,7 +91,13 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
         return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
     };
 
+    const formatDate = (dateString) => {
+        if (!dateString) return 'Soon';
+        return new Date(dateString).toLocaleDateString();
+    };
+
     const nextLesson = getNextLesson();
+    const nextReviewDate = getNextReviewDate(loadReviews());
 
     if (loading) {
         return (
@@ -86,12 +115,14 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                 animate={{ opacity: 1, y: 0 }}
                 style={{ marginBottom: 'var(--space-2xl)' }}
             >
-                <h1 style={{ marginBottom: 'var(--space-sm)' }}>
-                    Welcome back, {profile?.name?.split(' ')[0] || 'Learner'}! 👋
-                </h1>
-                <p style={{ color: 'var(--dark-text-secondary)', fontSize: '1.1rem' }}>
-                    {adaptation?.motivationMessage || `You're making progress towards ${profile?.goal || 'your goals'}.`}
-                </p>
+                <div className="hero-glow">
+                    <h1 style={{ marginBottom: 'var(--space-sm)' }}>
+                        Welcome back, {profile?.name?.split(' ')[0] || 'Learner'}!
+                    </h1>
+                    <p style={{ color: 'var(--dark-text-secondary)', fontSize: '1.1rem' }}>
+                        {adaptation?.motivationMessage || `You're making progress towards ${profile?.goal || 'your goals'}.`}
+                    </p>
+                </div>
             </motion.div>
 
             {/* Stats Grid */}
@@ -103,12 +134,12 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                 style={{ marginBottom: 'var(--space-2xl)' }}
             >
                 {/* Streak Card */}
-                <div className="stat-card" style={{
+                <div className="stat-card glow-border" style={{
                     background: 'linear-gradient(135deg, rgba(204, 120, 92, 0.2), rgba(212, 162, 127, 0.1))',
-                    borderColor: 'var(--claude-orange)'
+                    borderColor: 'var(--accent)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                        <Flame size={24} style={{ color: 'var(--claude-orange)' }} />
+                        <Flame size={24} style={{ color: 'var(--accent)' }} />
                         <span className="stat-card-label">Current Streak</span>
                     </div>
                     <div className="stat-card-value">{streak?.currentStreak || 0} days</div>
@@ -146,15 +177,15 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                     </div>
                 </div>
 
-                {/* Lessons Completed Card */}
+                {/* Reviews Card */}
                 <div className="stat-card">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                        <BookOpen size={24} style={{ color: 'var(--warning)' }} />
-                        <span className="stat-card-label">Lessons Completed</span>
+                        <ShieldCheck size={24} style={{ color: 'var(--warning)' }} />
+                        <span className="stat-card-label">Reviews Due</span>
                     </div>
-                    <div className="stat-card-value">{progress?.lessonsCompleted || 0}</div>
+                    <div className="stat-card-value">{reviewQueue.length}</div>
                     <div style={{ fontSize: '0.875rem', color: 'var(--dark-text-secondary)' }}>
-                        of {curriculum?.roadmap?.length || 7} total
+                        Next review: {nextReviewDate ? formatDate(nextReviewDate) : 'Set soon'}
                     </div>
                 </div>
             </motion.div>
@@ -166,7 +197,7 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                     {/* Continue Learning Card */}
                     {nextLesson && (
                         <motion.div
-                            className="glass-card"
+                            className="glass-card shimmer-panel"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
@@ -176,14 +207,14 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                                 position: 'absolute',
                                 top: 0,
                                 right: 0,
-                                width: 200,
-                                height: 200,
-                                background: 'radial-gradient(circle, rgba(204, 120, 92, 0.2), transparent 70%)',
+                                width: 220,
+                                height: 220,
+                                background: 'radial-gradient(circle, rgba(91, 234, 255, 0.18), transparent 70%)',
                                 pointerEvents: 'none',
                             }} />
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-sm)' }}>
-                                <Sparkles size={18} style={{ color: 'var(--claude-orange)' }} />
+                                <Sparkles size={18} style={{ color: 'var(--accent)' }} />
                                 <span className="badge badge-primary">CONTINUE LEARNING</span>
                             </div>
 
@@ -222,11 +253,46 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                         </motion.div>
                     )}
 
+                    {/* Proactive Suggestions */}
+                    <motion.div
+                        className="glass-card-elevated"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                    >
+                        <h3 style={{ marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                            <Sparkles size={20} style={{ color: 'var(--accent)' }} />
+                            Proactive Suggestions
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+                            {suggestions.length === 0 ? (
+                                <p style={{ color: 'var(--dark-text-secondary)' }}>Generating your next moves...</p>
+                            ) : (
+                                suggestions.slice(0, 3).map((item, index) => (
+                                    <motion.div
+                                        key={`${item.title}-${index}`}
+                                        className="suggestion-card"
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.08 }}
+                                    >
+                                        <div className="suggestion-header">
+                                            <span className="badge badge-primary">{item.tag || 'Focus'}</span>
+                                            <h4>{item.title}</h4>
+                                        </div>
+                                        <p>{item.action}</p>
+                                        <span className="suggestion-why">{item.why}</span>
+                                    </motion.div>
+                                ))
+                            )}
+                        </div>
+                    </motion.div>
+
                     {/* Quick Actions */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
+                        transition={{ delay: 0.4 }}
                     >
                         <h3 style={{ marginBottom: 'var(--space-md)' }}>Quick Actions</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-md)' }}>
@@ -241,19 +307,19 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                                     textAlign: 'left',
                                     border: '1px solid var(--dark-border)',
                                 }}
-                                whileHover={{ scale: 1.02, borderColor: 'var(--claude-orange)' }}
+                                whileHover={{ scale: 1.02, borderColor: 'var(--accent)' }}
                                 whileTap={{ scale: 0.98 }}
                             >
                                 <div style={{
                                     width: 48,
                                     height: 48,
                                     borderRadius: 'var(--radius-md)',
-                                    background: 'rgba(204, 120, 92, 0.2)',
+                                    background: 'rgba(91, 234, 255, 0.2)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                 }}>
-                                    <Brain size={24} style={{ color: 'var(--claude-orange)' }} />
+                                    <Brain size={24} style={{ color: 'var(--accent)' }} />
                                 </div>
                                 <div>
                                     <div style={{ fontWeight: 600 }}>Practice Mode</div>
@@ -274,7 +340,7 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                                     textAlign: 'left',
                                     border: '1px solid var(--dark-border)',
                                 }}
-                                whileHover={{ scale: 1.02, borderColor: 'var(--claude-orange)' }}
+                                whileHover={{ scale: 1.02, borderColor: 'var(--accent-2)' }}
                                 whileTap={{ scale: 0.98 }}
                             >
                                 <div style={{
@@ -309,7 +375,7 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                         transition={{ delay: 0.2 }}
                     >
                         <h4 style={{ marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                            <Award size={18} style={{ color: 'var(--claude-orange)' }} />
+                            <Award size={18} style={{ color: 'var(--accent)' }} />
                             Your Goal
                         </h4>
                         <p style={{ fontSize: '1.1rem', fontWeight: 500, marginBottom: 'var(--space-sm)' }}>
@@ -326,38 +392,69 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                         )}
                     </motion.div>
 
-                    {/* Skills You're Gaining */}
-                    {curriculum?.skillsYouWillGain && (
-                        <motion.div
-                            className="glass-card-elevated"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.3 }}
-                        >
-                            <h4 style={{ marginBottom: 'var(--space-md)' }}>Skills You're Gaining</h4>
+                    {/* Review Queue */}
+                    <motion.div
+                        className="glass-card-elevated"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 }}
+                    >
+                        <h4 style={{ marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                            <ShieldCheck size={18} style={{ color: 'var(--warning)' }} />
+                            Review Queue
+                        </h4>
+                        {reviewQueue.length === 0 ? (
+                            <p style={{ color: 'var(--dark-text-secondary)' }}>No reviews due. Great job staying fresh.</p>
+                        ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-                                {curriculum.skillsYouWillGain.slice(0, 5).map((skill, i) => (
-                                    <div
-                                        key={i}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 'var(--space-sm)',
-                                            fontSize: '0.9rem',
-                                        }}
-                                    >
-                                        <div style={{
-                                            width: 6,
-                                            height: 6,
-                                            borderRadius: '50%',
-                                            background: 'var(--claude-orange)',
-                                        }} />
-                                        {skill}
+                                {reviewQueue.slice(0, 4).map((review) => (
+                                    <div key={review.id} className="review-item">
+                                        <div>
+                                            <div style={{ fontWeight: 600 }}>{review.front}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--dark-text-secondary)' }}>
+                                                Due {formatDate(review.dueDate)}
+                                            </div>
+                                        </div>
+                                        <span className="badge badge-warning">Review</span>
                                     </div>
                                 ))}
                             </div>
-                        </motion.div>
-                    )}
+                        )}
+                        <motion.button
+                            className="btn btn-secondary"
+                            onClick={() => onViewChange && onViewChange('practice')}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            style={{ marginTop: 'var(--space-md)' }}
+                        >
+                            Start Reviews
+                        </motion.button>
+                    </motion.div>
+
+                    {/* Memory Highlights */}
+                    <motion.div
+                        className="glass-card-elevated"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 }}
+                    >
+                        <h4 style={{ marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                            <Layers size={18} style={{ color: 'var(--info)' }} />
+                            Memory Highlights
+                        </h4>
+                        {memoryHighlights.length === 0 ? (
+                            <p style={{ color: 'var(--dark-text-secondary)' }}>As you learn, we'll keep key insights here.</p>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                                {memoryHighlights.map((item, i) => (
+                                    <div key={`${item.metadata?.topic || 'memory'}-${i}`} className="memory-chip">
+                                        <span>{item.metadata?.topic || 'Insight'}</span>
+                                        <p>{item.content}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
 
                     {/* AI Recommendations */}
                     {adaptation?.recommendations && adaptation.recommendations.length > 0 && (
@@ -365,10 +462,10 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                             className="glass-card-elevated"
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.4 }}
+                            transition={{ delay: 0.5 }}
                             style={{
                                 borderColor: 'var(--info)',
-                                background: 'rgba(96, 165, 250, 0.05)',
+                                background: 'rgba(96, 165, 250, 0.08)',
                             }}
                         >
                             <h4 style={{ marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
@@ -378,7 +475,7 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                                 {adaptation.recommendations.slice(0, 3).map((rec, i) => (
                                     <p key={i} style={{ fontSize: '0.9rem', color: 'var(--dark-text-secondary)' }}>
-                                        • {rec}
+                                        � {rec}
                                     </p>
                                 ))}
                             </div>
@@ -389,3 +486,6 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
         </div>
     );
 }
+
+
+

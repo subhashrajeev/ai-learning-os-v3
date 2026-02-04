@@ -131,6 +131,7 @@ export default function Onboarding({ onComplete }) {
                     quizScore: 0,
                     lastActiveDate: new Date().toISOString(),
                     startDate: new Date().toISOString(),
+                    lastReviewDate: null,
                 });
 
                 // Wait a moment for effect, then complete
@@ -166,8 +167,7 @@ export default function Onboarding({ onComplete }) {
                             Welcome to AI Learning OS
                         </h1>
                         <p style={{ color: 'var(--dark-text-secondary)', maxWidth: 400, margin: '0 auto' }}>
-                            Your personalized learning companion for mastering AI.
-                            Answer a few questions and we'll create a custom learning path just for you.
+                            Your personalized learning companion for mastering AI. Answer a few questions and we'll build a path with long-term memory and spaced repetition.
                         </p>
 
                         <div style={{
@@ -177,7 +177,7 @@ export default function Onboarding({ onComplete }) {
                             marginTop: 'var(--space-2xl)',
                             flexWrap: 'wrap'
                         }}>
-                            {['Personalized Path', 'Micro-Learning', 'Track Progress'].map((feature) => (
+                            {['Personalized Path', 'Spaced Repetition', 'Memory Vault', 'Track Progress'].map((feature) => (
                                 <div
                                     key={feature}
                                     style={{
@@ -528,3 +528,5 @@ export default function Onboarding({ onComplete }) {
         </div>
     );
 }
+
+

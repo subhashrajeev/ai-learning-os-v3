@@ -1,11 +1,20 @@
 // Storage utility for persisting user data in localStorage
 
+import {
+    createReviewItem,
+    getDueReviews,
+    scoreToQuality,
+    updateReviewItem,
+} from '@/lib/spacedRepetition';
+
 const STORAGE_KEYS = {
     PROFILE: 'ai_learning_profile',
     PROGRESS: 'ai_learning_progress',
     CURRICULUM: 'ai_learning_curriculum',
     STREAK: 'ai_learning_streak',
     SAVED_ITEMS: 'ai_learning_saved',
+    REVIEWS: 'ai_learning_reviews',
+    MEMORY_SNAPSHOTS: 'ai_learning_memory_snapshots',
 };
 
 // Profile Management
@@ -64,6 +73,7 @@ function getDefaultProgress() {
         quizScore: 0,
         lastActiveDate: null,
         startDate: new Date().toISOString(),
+        lastReviewDate: null,
     };
 }
 
@@ -233,6 +243,119 @@ export function exportAllData() {
         curriculum: loadCurriculum(),
         streak: loadStreak(),
         savedItems: loadSavedItems(),
+        reviews: loadReviews(),
+        memorySnapshots: loadMemorySnapshots(),
         exportedAt: new Date().toISOString(),
     };
+}
+
+// Spaced Repetition Reviews
+export function loadReviews() {
+    try {
+        const data = localStorage.getItem(STORAGE_KEYS.REVIEWS);
+        return data ? JSON.parse(data) : [];
+    } catch (error) {
+        console.error('Error loading reviews:', error);
+        return [];
+    }
+}
+
+export function saveReviews(reviews) {
+    try {
+        localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(reviews));
+        return true;
+    } catch (error) {
+        console.error('Error saving reviews:', error);
+        return false;
+    }
+}
+
+export function upsertReviewItem(item) {
+    if (!item) return [];
+    const reviews = loadReviews();
+    const index = reviews.findIndex((review) => review.id === item.id || review.front === item.front);
+    const updatedItem = {
+        ...item,
+        updatedAt: new Date().toISOString(),
+    };
+
+    if (index >= 0) {
+        reviews[index] = { ...reviews[index], ...updatedItem };
+    } else {
+        reviews.push(updatedItem);
+    }
+
+    saveReviews(reviews);
+    return reviews;
+}
+
+export function seedReviewFromLesson(dayInfo, lessonContent, profile, reflection) {
+    if (!dayInfo?.topic) return null;
+
+    const snippet = (lessonContent || '')
+        .split('\n')
+        .filter((line) => line.trim())
+        .slice(0, 3)
+        .join(' ')
+        .slice(0, 200);
+
+    const reviewItem = createReviewItem({
+        id: `lesson-${dayInfo.day}`,
+        front: dayInfo.topic,
+        back: [dayInfo.objective, snippet, reflection].filter(Boolean).join(' | '),
+        tags: ['lesson', profile?.goal].filter(Boolean),
+        source: 'lesson',
+        metadata: { day: dayInfo.day, topic: dayInfo.topic },
+    });
+
+    upsertReviewItem(reviewItem);
+    return reviewItem;
+}
+
+export function updateReviewFromScore(topic, score, metadata = {}) {
+    if (!topic) return null;
+    const reviews = loadReviews();
+    let item = reviews.find((review) => review.front === topic || review.id === `topic-${topic}`);
+
+    if (!item) {
+        item = createReviewItem({
+            id: `topic-${topic}`,
+            front: topic,
+            back: `Recall core concepts about ${topic}.`,
+            tags: ['practice'],
+            source: 'practice',
+            metadata,
+        });
+        reviews.push(item);
+    }
+
+    const updated = updateReviewItem(item, scoreToQuality(score), new Date());
+    updated.metadata = { ...(item.metadata || {}), ...metadata };
+    const next = reviews.map((review) => (review.id === updated.id ? updated : review));
+    saveReviews(next);
+    return updated;
+}
+
+export function getDueReviewItems(referenceDate = new Date()) {
+    return getDueReviews(loadReviews(), referenceDate);
+}
+
+// Memory snapshots (local fallback for ChromaDB)
+export function loadMemorySnapshots() {
+    try {
+        const data = localStorage.getItem(STORAGE_KEYS.MEMORY_SNAPSHOTS);
+        return data ? JSON.parse(data) : [];
+    } catch (error) {
+        console.error('Error loading memory snapshots:', error);
+        return [];
+    }
+}
+
+export function saveMemorySnapshot(entry) {
+    if (!entry?.content) return [];
+    const snapshots = loadMemorySnapshots();
+    snapshots.unshift({ ...entry, savedAt: new Date().toISOString() });
+    const trimmed = snapshots.slice(0, 50);
+    localStorage.setItem(STORAGE_KEYS.MEMORY_SNAPSHOTS, JSON.stringify(trimmed));
+    return trimmed;
 }

@@ -21,19 +21,32 @@ export default function Home() {
 
     // Check for existing profile on mount
     useEffect(() => {
-        const savedProfile = loadProfile();
-        const savedProgress = loadProgress();
+        const hydrate = () => {
+            const savedProfile = loadProfile();
+            const savedProgress = loadProgress();
 
-        if (savedProfile && savedProfile.name) {
-            setProfile(savedProfile);
-            setHasProfile(true);
-        }
+            if (savedProfile && savedProfile.name) {
+                setProfile(savedProfile);
+                setHasProfile(true);
+            }
 
-        if (savedProgress) {
-            setProgress(savedProgress);
-        }
+            if (savedProgress) {
+                setProgress(savedProgress);
+            }
 
-        setIsLoading(false);
+            setIsLoading(false);
+        };
+
+        hydrate();
+
+        const handleStorage = (event) => {
+            if (event.key?.includes('ai_learning')) {
+                hydrate();
+            }
+        };
+
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
     }, []);
 
     // Handle onboarding completion
@@ -130,10 +143,10 @@ export default function Home() {
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeView}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3 }}
+                        initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }}
+                        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                        exit={{ opacity: 0, y: -24, filter: 'blur(6px)' }}
+                        transition={{ duration: 0.45, ease: 'easeOut' }}
                     >
                         {renderView()}
                     </motion.div>

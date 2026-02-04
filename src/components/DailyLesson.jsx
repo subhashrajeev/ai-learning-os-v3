@@ -10,13 +10,13 @@ import {
     Clock,
     Target,
     Lightbulb,
-    Code,
-    HelpCircle,
     ArrowRight,
     Award,
+    PenLine,
 } from 'lucide-react';
-import { loadCurriculum, loadProgress, markDayCompleted } from '@/lib/storage';
+import { loadCurriculum, markDayCompleted, seedReviewFromLesson } from '@/lib/storage';
 import { generateLessonContent } from '@/lib/gemini';
+import { createLessonMemory, upsertMemoryEntries } from '@/lib/memory';
 
 export default function DailyLesson({ profile, dayNumber, onComplete }) {
     const [curriculum, setCurriculum] = useState(null);
@@ -32,8 +32,8 @@ export default function DailyLesson({ profile, dayNumber, onComplete }) {
 
     // Completion state
     const [isCompleted, setIsCompleted] = useState(false);
-    const [showReflection, setShowReflection] = useState(false);
     const [reflectionAnswer, setReflectionAnswer] = useState('');
+    const [reviewItem, setReviewItem] = useState(null);
 
     useEffect(() => {
         loadData();
@@ -92,10 +92,25 @@ export default function DailyLesson({ profile, dayNumber, onComplete }) {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const handleMarkComplete = () => {
+    const handleMarkComplete = async () => {
         pauseTimer();
         const timeInMinutes = Math.ceil(timeElapsed / 60);
         markDayCompleted(dayNumber, timeInMinutes);
+
+        const review = seedReviewFromLesson(dayInfo, lessonContent, profile, reflectionAnswer);
+        setReviewItem(review);
+
+        const memoryEntry = createLessonMemory({
+            dayInfo,
+            lessonContent,
+            reflection: reflectionAnswer,
+            profile,
+        });
+
+        if (memoryEntry) {
+            await upsertMemoryEntries([memoryEntry]);
+        }
+
         setIsCompleted(true);
     };
 
@@ -105,7 +120,6 @@ export default function DailyLesson({ profile, dayNumber, onComplete }) {
         const elements = [];
         let inCodeBlock = false;
         let codeContent = '';
-        let codeLanguage = '';
 
         lines.forEach((line, i) => {
             if (line.startsWith('```')) {
@@ -119,7 +133,6 @@ export default function DailyLesson({ profile, dayNumber, onComplete }) {
                     inCodeBlock = false;
                 } else {
                     inCodeBlock = true;
-                    codeLanguage = line.slice(3);
                 }
                 return;
             }
@@ -210,7 +223,7 @@ export default function DailyLesson({ profile, dayNumber, onComplete }) {
                     marginBottom: 'var(--space-2xl)'
                 }}>
                     <div className="stat-card" style={{ flex: 1, maxWidth: 150 }}>
-                        <Clock size={24} style={{ color: 'var(--claude-orange)', marginBottom: 'var(--space-sm)' }} />
+                        <Clock size={24} style={{ color: 'var(--accent)', marginBottom: 'var(--space-sm)' }} />
                         <div className="stat-card-value" style={{ fontSize: '1.5rem' }}>
                             {formatTime(timeElapsed)}
                         </div>
@@ -225,6 +238,12 @@ export default function DailyLesson({ profile, dayNumber, onComplete }) {
                         <div className="stat-card-label">Lesson</div>
                     </div>
                 </div>
+
+                {reviewItem?.dueDate && (
+                    <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
+                        <strong>Next Review:</strong> {new Date(reviewItem.dueDate).toLocaleDateString()}
+                    </div>
+                )}
 
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-md)' }}>
                     <motion.button
@@ -318,6 +337,23 @@ export default function DailyLesson({ profile, dayNumber, onComplete }) {
                     </motion.div>
                 )}
 
+                {/* Reflection */}
+                {lessonContent && (
+                    <div className="reflection-card">
+                        <div className="reflection-header">
+                            <PenLine size={18} />
+                            <strong>Quick Reflection</strong>
+                        </div>
+                        <textarea
+                            className="input textarea"
+                            placeholder="Write one insight or question to store in your memory vault..."
+                            value={reflectionAnswer}
+                            onChange={(e) => setReflectionAnswer(e.target.value)}
+                            rows={3}
+                        />
+                    </div>
+                )}
+
                 {/* Action Bar */}
                 {lessonContent && (
                     <motion.div
@@ -382,7 +418,7 @@ export default function DailyLesson({ profile, dayNumber, onComplete }) {
                 {/* Day Info */}
                 <div className="glass-card-elevated">
                     <h4 style={{ marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                        <Target size={18} style={{ color: 'var(--claude-orange)' }} />
+                        <Target size={18} style={{ color: 'var(--accent)' }} />
                         Today's Goal
                     </h4>
                     <p style={{ fontSize: '0.9rem', color: 'var(--dark-text-secondary)' }}>
@@ -416,7 +452,7 @@ export default function DailyLesson({ profile, dayNumber, onComplete }) {
                                         minWidth: 6,
                                         height: 6,
                                         borderRadius: '50%',
-                                        background: 'var(--claude-orange)',
+                                        background: 'var(--accent)',
                                         marginTop: 6,
                                     }} />
                                     {item}

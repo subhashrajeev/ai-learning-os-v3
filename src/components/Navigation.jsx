@@ -1,24 +1,23 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     LayoutDashboard,
     Map,
-    BookOpen,
     Brain,
     Radio,
-    Settings,
-    LogOut
 } from 'lucide-react';
-import { loadStreak, updateStreak, clearAllData } from '@/lib/storage';
-import { useEffect, useState } from 'react';
+import { getDueReviewItems, updateStreak, clearAllData } from '@/lib/storage';
 
 export default function Navigation({ profile, progress, activeView, onViewChange }) {
     const [streak, setStreak] = useState({ currentStreak: 0 });
+    const [dueCount, setDueCount] = useState(0);
 
     useEffect(() => {
         const updatedStreak = updateStreak();
         setStreak(updatedStreak);
+        setDueCount(getDueReviewItems().length);
     }, []);
 
     const navItems = [
@@ -40,7 +39,10 @@ export default function Navigation({ profile, progress, activeView, onViewChange
             {/* Brand */}
             <div className="nav-brand">
                 <div className="nav-brand-icon">🧠</div>
-                <span>AI Learning OS</span>
+                <div>
+                    <div className="nav-brand-title">AI Learning OS</div>
+                    <div className="nav-brand-subtitle">V3.0 Memory Stack</div>
+                </div>
             </div>
 
             {/* Navigation Links */}
@@ -78,6 +80,11 @@ export default function Navigation({ profile, progress, activeView, onViewChange
                     <span className="streak-label">day streak</span>
                 </motion.div>
 
+                <div className="nav-chip">
+                    <span>Reviews Due</span>
+                    <strong>{dueCount}</strong>
+                </div>
+
                 {/* Profile Quick View */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ textAlign: 'right' }}>
@@ -94,7 +101,7 @@ export default function Navigation({ profile, progress, activeView, onViewChange
                             width: 40,
                             height: 40,
                             borderRadius: 'var(--radius-md)',
-                            background: 'linear-gradient(135deg, var(--claude-orange), var(--claude-tan))',
+                            background: 'linear-gradient(135deg, var(--accent), var(--accent-glow))',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
