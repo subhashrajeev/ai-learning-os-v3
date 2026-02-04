@@ -190,7 +190,7 @@ Topic selection and knowledge validation.
 ## 🔗 Links
 
 - **Live Demo**: https://capstone-project-phi-one.vercel.app
-- **GitHub**: https://github.com/subhashrajeev/capstone_project
+- **GitHub**: https://github.com/subhashrajeev/ai-learning-os-v3
 - **Demo Video**: Included in submission (AILearningOSDemo.mp4)
 
 ---
