@@ -6,9 +6,8 @@ from datetime import datetime
 
 load_dotenv()
 
-# Configure Gemini
-# HARDCODED FIX
-genai.configure(api_key="AIzaSyA-kEVlQrFkpj69iQfsx-ZE75P3hlhMoqI")
+# Configure Gemini - API key loaded from environment variable
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 class LearningEngine:
     def __init__(self):
