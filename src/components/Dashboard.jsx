@@ -6,7 +6,8 @@ import {
     TrendingUp,
     Clock,
     Target,
-    Award,\n    Brain,
+    Award,
+    Brain,
     Flame,
     ChevronRight,
     Sparkles,
@@ -475,7 +476,7 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                                 {adaptation.recommendations.slice(0, 3).map((rec, i) => (
                                     <p key={i} style={{ fontSize: '0.9rem', color: 'var(--dark-text-secondary)' }}>
-                                        • {rec}
+                                        â€¢ {rec}
                                     </p>
                                 ))}
                             </div>
@@ -486,6 +487,3 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
         </div>
     );
 }
-
-
-

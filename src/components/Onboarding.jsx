@@ -140,7 +140,8 @@ export default function Onboarding({ onComplete }) {
                 }, 1500);
 
             } catch (err) {
-                setError(err.message);
+                console.error('Onboarding Error:', err);
+                setError(err.message || 'Failed to generate curriculum. Please check your API key.');
                 setIsGenerating(false);
                 setCurrentStep(prev => prev - 1);
             }
@@ -309,7 +310,7 @@ export default function Onboarding({ onComplete }) {
                         <div className="input-group">
                             <label className="input-label">How much time can you dedicate daily?</label>
                             <p style={{ fontSize: '0.875rem', color: 'var(--dark-text-secondary)', marginBottom: 'var(--space-md)' }}>
-                                Be realistic — consistency beats intensity
+                                Be realistic - consistency beats intensity
                             </p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                                 {TIME_OPTIONS.map((option) => (
@@ -394,7 +395,7 @@ export default function Onboarding({ onComplete }) {
                             }}
                             style={{ fontSize: '4rem', marginBottom: 'var(--space-xl)' }}
                         >
-                            🧠
+                            🪄
                         </motion.div>
 
                         <h2 style={{ marginBottom: 'var(--space-md)' }}>
@@ -528,5 +529,3 @@ export default function Onboarding({ onComplete }) {
         </div>
     );
 }
-
-

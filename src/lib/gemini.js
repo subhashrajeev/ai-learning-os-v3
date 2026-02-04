@@ -62,15 +62,22 @@ OUTPUT FORMAT (JSON ONLY, no markdown):
 }`;
 
     try {
+        console.log('Generating curriculum with prompt:', prompt.substring(0, 100) + '...');
         const result = await model.generateContent(prompt);
-        const text = result.response.text();
+        const response = await result.response;
+        const text = response.text();
+        console.log('Gemini Response:', text.substring(0, 100) + '...');
 
         // Clean up JSON if markdown tags exist
         const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         return JSON.parse(cleanText);
     } catch (error) {
         console.error('Error generating curriculum:', error);
-        throw new Error('Failed to generate curriculum. Please try again.');
+        // Fallback for debugging
+        if (error.message.includes('API key')) {
+            throw new Error('Invalid or missing API key in .env.local. Please add your GEMINI_API_KEY.');
+        }
+        throw new Error('Failed to generate curriculum. ' + error.message);
     }
 }
 

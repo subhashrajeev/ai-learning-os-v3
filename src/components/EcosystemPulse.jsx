@@ -128,9 +128,9 @@ export default function EcosystemPulse({ profile }) {
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-sm)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-sm)', transform: 'none', writingMode: 'horizontal-tb' }}>
                             <Radio size={24} style={{ color: 'var(--accent)' }} />
-                            <h1>Ecosystem Pulse</h1>
+                            <h1 style={{ transform: 'none', margin: 0 }}>Ecosystem Pulse</h1>
                         </div>
                         <p style={{ color: 'var(--dark-text-secondary)' }}>
                             AI updates curated for your learning journey
@@ -164,14 +164,15 @@ export default function EcosystemPulse({ profile }) {
                 {/* Weekly Digest */}
                 {updates?.weeklyDigest && !showSaved && (
                     <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, y: 10, rotate: 0 }}
+                        animate={{ opacity: 1, y: 0, rotate: 0 }}
                         style={{
                             marginTop: 'var(--space-lg)',
                             padding: 'var(--space-md) var(--space-lg)',
-                            background: 'linear-gradient(135deg, rgba(91, 234, 255, 0.18), rgba(34, 197, 94, 0.08))',
-                            border: '1px solid var(--accent)',
+                            background: 'rgba(17, 24, 39, 0.4)',
+                            border: '1px solid rgba(91, 234, 255, 0.2)',
                             borderRadius: 'var(--radius-lg)',
+                            transform: 'none',
                         }}
                     >
                         <div style={{
@@ -183,7 +184,7 @@ export default function EcosystemPulse({ profile }) {
                             <Sparkles size={18} style={{ color: 'var(--accent)' }} />
                             <span style={{ fontWeight: 600, color: 'var(--accent)' }}>Weekly Digest</span>
                         </div>
-                        <p style={{ color: 'var(--dark-text)', fontSize: '0.95rem' }}>
+                        <p style={{ color: 'var(--dark-text-secondary)', fontSize: '0.95rem' }}>
                             {updates.weeklyDigest}
                         </p>
                     </motion.div>
@@ -249,8 +250,6 @@ export default function EcosystemPulse({ profile }) {
             {/* Updates Grid */}
             {!showSaved && (
                 <>
-                    {/* Filter Tags */}
-                    {uniqueTags.length > 1 && (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -262,28 +261,37 @@ export default function EcosystemPulse({ profile }) {
                             }}
                         >
                             <motion.button
-                                className={`btn ${activeFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+                                className="btn"
+                                style={{
+                                    fontSize: '0.85rem',
+                                    background: activeFilter === 'all' ? 'rgba(91, 234, 255, 0.15)' : 'rgba(17, 24, 39, 0.8)',
+                                    color: activeFilter === 'all' ? 'var(--accent)' : 'var(--dark-text-secondary)',
+                                    border: activeFilter === 'all' ? '1px solid var(--accent)' : '1px solid rgba(91, 234, 255, 0.1)',
+                                }}
                                 onClick={() => setActiveFilter('all')}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                style={{ fontSize: '0.85rem' }}
                             >
                                 All
                             </motion.button>
                             {uniqueTags.map(tag => (
                                 <motion.button
                                     key={tag}
-                                    className={`btn ${activeFilter === tag ? 'btn-primary' : 'btn-secondary'}`}
+                                    className="btn"
+                                    style={{
+                                        fontSize: '0.85rem',
+                                        background: activeFilter === tag ? 'rgba(91, 234, 255, 0.15)' : 'rgba(17, 24, 39, 0.8)',
+                                        color: activeFilter === tag ? 'var(--accent)' : 'var(--dark-text-secondary)',
+                                        border: activeFilter === tag ? '1px solid var(--accent)' : '1px solid rgba(91, 234, 255, 0.1)',
+                                    }}
                                     onClick={() => setActiveFilter(tag)}
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
-                                    style={{ fontSize: '0.85rem' }}
                                 >
                                     {tag}
                                 </motion.button>
                             ))}
                         </motion.div>
-                    )}
 
                     <div className="pulse-grid">
                         {getFilteredUpdates().map((item, index) => (

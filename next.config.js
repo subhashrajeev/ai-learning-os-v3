@@ -4,6 +4,7 @@ const nextConfig = {
     images: {
         domains: ['images.unsplash.com'],
     },
+    serverExternalPackages: ['chromadb'],
 };
 
 module.exports = nextConfig;

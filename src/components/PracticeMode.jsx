@@ -135,7 +135,7 @@ export default function PracticeMode({ profile }) {
                     animate={{ opacity: 1, y: 0 }}
                     style={{ textAlign: 'center', marginBottom: 'var(--space-2xl)' }}
                 >
-                    <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>🧠</div>
+                    <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>🎯</div>
                     <h1>Practice Mode</h1>
                     <p style={{ color: 'var(--dark-text-secondary)' }}>
                         Test your knowledge with AI-generated quizzes
