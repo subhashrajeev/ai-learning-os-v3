@@ -288,6 +288,63 @@ OUTPUT FORMAT (JSON ONLY, no markdown):
     }
 }
 
+// Generate ecosystem updates from live Brave Search data
+export async function generateEcosystemFromLiveData(interests, goal, articles) {
+    const model = getModel();
+
+    const articleContext = articles.map(a =>
+        `[${a.id}] "${a.title}" — ${a.description} (Source: ${a.source}, Published: ${a.publishedAt}, URL: ${a.url})`
+    ).join('\n');
+
+    const prompt = `You are a Tech Industry Analyst personalizing REAL news articles for an AI learner.
+
+USER'S INTERESTS: ${interests || 'AI/ML general'}
+USER'S GOAL: ${goal}
+
+REAL NEWS ARTICLES FROM THIS WEEK:
+${articleContext}
+
+TASK:
+Analyze these REAL articles and select the 5 most relevant to this learner.
+For each selected article:
+- Write a catchy headline (based on the actual article, do NOT fabricate)
+- Summarize the key points in 2-3 sentences (based on the actual article content)
+- Explain why it matters TO THIS SPECIFIC LEARNER given their goal
+- Assign a relevant tag/category
+- Rate relevance (1-10) to their goals
+- Include the original article URL
+
+Also write a brief weekly digest summary covering the key themes.
+
+OUTPUT FORMAT (JSON ONLY, no markdown):
+{
+  "updates": [
+    {
+      "id": 1,
+      "headline": "Headline based on real article",
+      "description": "Summary based on real article content...",
+      "whyItMatters": "This matters for your goal of X because...",
+      "tag": "Models",
+      "relevanceScore": 9,
+      "source": "source name",
+      "url": "original article URL"
+    }
+  ],
+  "lastUpdated": "February 2026",
+  "weeklyDigest": "This week in AI for [goal]: Summary based on real news..."
+}`;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        return JSON.parse(cleanText);
+    } catch (error) {
+        console.error('Error generating ecosystem from live data:', error);
+        throw new Error('Failed to analyze ecosystem updates. Please try again.');
+    }
+}
+
 // Analyze learning pace and suggest adjustments
 export async function analyzeAndAdapt(profile, progress, curriculum) {
     const model = getModel();

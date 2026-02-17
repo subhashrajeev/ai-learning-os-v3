@@ -10,9 +10,10 @@ import {
     RefreshCw,
     Sparkles,
     Clock,
+    ExternalLink,
+    Zap,
 } from 'lucide-react';
 import { loadSavedItems, addSavedItem, removeSavedItem } from '@/lib/storage';
-import { generateEcosystemUpdates } from '@/lib/gemini';
 import { upsertMemoryEntries } from '@/lib/memory';
 
 export default function EcosystemPulse({ profile }) {
@@ -32,8 +33,20 @@ export default function EcosystemPulse({ profile }) {
         setSavedItems(saved);
 
         try {
-            const result = await generateEcosystemUpdates(profile?.interests, profile?.goal);
-            setUpdates(result);
+            const response = await fetch('/api/ecosystem', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    interests: profile?.interests,
+                    goal: profile?.goal,
+                }),
+            });
+            const result = await response.json();
+            if (result.ok) {
+                setUpdates(result);
+            } else {
+                console.error('API error:', result.error);
+            }
         } catch (error) {
             console.error('Failed to load updates:', error);
         }
@@ -44,8 +57,18 @@ export default function EcosystemPulse({ profile }) {
     const handleRefresh = async () => {
         setRefreshing(true);
         try {
-            const result = await generateEcosystemUpdates(profile?.interests, profile?.goal);
-            setUpdates(result);
+            const response = await fetch('/api/ecosystem', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    interests: profile?.interests,
+                    goal: profile?.goal,
+                }),
+            });
+            const result = await response.json();
+            if (result.ok) {
+                setUpdates(result);
+            }
         } catch (error) {
             console.error('Failed to refresh:', error);
         }
@@ -121,16 +144,30 @@ export default function EcosystemPulse({ profile }) {
     return (
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
             {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
+            <div
                 style={{ marginBottom: 'var(--space-2xl)' }}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-sm)', transform: 'none', writingMode: 'horizontal-tb' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-sm)' }}>
                             <Radio size={24} style={{ color: 'var(--accent)' }} />
-                            <h1 style={{ transform: 'none', margin: 0 }}>Ecosystem Pulse</h1>
+                            <h1 style={{ margin: 0 }}>Ecosystem Pulse</h1>
+                            <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '2px 10px',
+                                borderRadius: 'var(--radius-full)',
+                                background: 'rgba(52, 211, 153, 0.15)',
+                                color: 'var(--success)',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                            }}>
+                                <Zap size={10} />
+                                Live
+                            </span>
                         </div>
                         <p style={{ color: 'var(--dark-text-secondary)' }}>
                             AI updates curated for your learning journey
@@ -138,41 +175,34 @@ export default function EcosystemPulse({ profile }) {
                     </div>
 
                     <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-                        <motion.button
+                        <button
                             className={`btn ${showSaved ? 'btn-primary' : 'btn-secondary'}`}
                             onClick={() => setShowSaved(!showSaved)}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
                         >
                             <Bookmark size={16} />
                             Saved ({savedItems.length})
-                        </motion.button>
+                        </button>
 
-                        <motion.button
+                        <button
                             className="btn btn-secondary"
                             onClick={handleRefresh}
                             disabled={refreshing}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
                         >
                             <RefreshCw size={16} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
                             Refresh
-                        </motion.button>
+                        </button>
                     </div>
                 </div>
 
                 {/* Weekly Digest */}
                 {updates?.weeklyDigest && !showSaved && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10, rotate: 0 }}
-                        animate={{ opacity: 1, y: 0, rotate: 0 }}
+                    <div
                         style={{
                             marginTop: 'var(--space-lg)',
                             padding: 'var(--space-md) var(--space-lg)',
                             background: 'rgba(17, 24, 39, 0.4)',
                             border: '1px solid rgba(91, 234, 255, 0.2)',
                             borderRadius: 'var(--radius-lg)',
-                            transform: 'none',
                         }}
                     >
                         <div style={{
@@ -187,9 +217,9 @@ export default function EcosystemPulse({ profile }) {
                         <p style={{ color: 'var(--dark-text-secondary)', fontSize: '0.95rem' }}>
                             {updates.weeklyDigest}
                         </p>
-                    </motion.div>
+                    </div>
                 )}
-            </motion.div>
+            </div>
 
             {/* Saved Items View */}
             {showSaved && (
@@ -250,48 +280,42 @@ export default function EcosystemPulse({ profile }) {
             {/* Updates Grid */}
             {!showSaved && (
                 <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
+                    <div
+                        style={{
+                            display: 'flex',
+                            gap: 'var(--space-sm)',
+                            marginBottom: 'var(--space-lg)',
+                            flexWrap: 'wrap'
+                        }}
+                    >
+                        <button
+                            className="btn"
                             style={{
-                                display: 'flex',
-                                gap: 'var(--space-sm)',
-                                marginBottom: 'var(--space-lg)',
-                                flexWrap: 'wrap'
+                                fontSize: '0.85rem',
+                                background: activeFilter === 'all' ? 'rgba(91, 234, 255, 0.15)' : 'rgba(17, 24, 39, 0.8)',
+                                color: activeFilter === 'all' ? 'var(--accent)' : 'var(--dark-text-secondary)',
+                                border: activeFilter === 'all' ? '1px solid var(--accent)' : '1px solid rgba(91, 234, 255, 0.1)',
                             }}
+                            onClick={() => setActiveFilter('all')}
                         >
-                            <motion.button
+                            All
+                        </button>
+                        {uniqueTags.map(tag => (
+                            <button
+                                key={tag}
                                 className="btn"
                                 style={{
                                     fontSize: '0.85rem',
-                                    background: activeFilter === 'all' ? 'rgba(91, 234, 255, 0.15)' : 'rgba(17, 24, 39, 0.8)',
-                                    color: activeFilter === 'all' ? 'var(--accent)' : 'var(--dark-text-secondary)',
-                                    border: activeFilter === 'all' ? '1px solid var(--accent)' : '1px solid rgba(91, 234, 255, 0.1)',
+                                    background: activeFilter === tag ? 'rgba(91, 234, 255, 0.15)' : 'rgba(17, 24, 39, 0.8)',
+                                    color: activeFilter === tag ? 'var(--accent)' : 'var(--dark-text-secondary)',
+                                    border: activeFilter === tag ? '1px solid var(--accent)' : '1px solid rgba(91, 234, 255, 0.1)',
                                 }}
-                                onClick={() => setActiveFilter('all')}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
+                                onClick={() => setActiveFilter(tag)}
                             >
-                                All
-                            </motion.button>
-                            {uniqueTags.map(tag => (
-                                <motion.button
-                                    key={tag}
-                                    className="btn"
-                                    style={{
-                                        fontSize: '0.85rem',
-                                        background: activeFilter === tag ? 'rgba(91, 234, 255, 0.15)' : 'rgba(17, 24, 39, 0.8)',
-                                        color: activeFilter === tag ? 'var(--accent)' : 'var(--dark-text-secondary)',
-                                        border: activeFilter === tag ? '1px solid var(--accent)' : '1px solid rgba(91, 234, 255, 0.1)',
-                                    }}
-                                    onClick={() => setActiveFilter(tag)}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    {tag}
-                                </motion.button>
-                            ))}
-                        </motion.div>
+                                {tag}
+                            </button>
+                        ))}
+                    </div>
 
                     <div className="pulse-grid">
                         {getFilteredUpdates().map((item, index) => (
@@ -345,6 +369,29 @@ export default function EcosystemPulse({ profile }) {
                                         {item.whyItMatters}
                                     </p>
                                 </div>
+
+                                {item.url && (
+                                    <a
+                                        href={item.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            marginTop: 'var(--space-sm)',
+                                            fontSize: '0.8rem',
+                                            color: 'var(--accent)',
+                                            opacity: 0.8,
+                                            transition: 'opacity 0.15s',
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                                        onMouseLeave={e => e.currentTarget.style.opacity = '0.8'}
+                                    >
+                                        <ExternalLink size={12} />
+                                        {item.source || 'Read source'}
+                                    </a>
+                                )}
                             </motion.div>
                         ))}
                     </div>
