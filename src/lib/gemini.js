@@ -11,7 +11,7 @@ const genAI = new GoogleGenerativeAI(apiKey);
 
 // Get the model
 function getModel() {
-    return genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    return genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 }
 
 // Generate personalized curriculum based on user profile
