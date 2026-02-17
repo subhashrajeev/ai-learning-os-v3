@@ -36,11 +36,8 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
     const [memoryHighlights, setMemoryHighlights] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
 
+    // Phase 1: Load local data instantly (no spinner wait)
     useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = async () => {
         const savedProgress = loadProgress();
         const savedCurriculum = loadCurriculum();
         const savedStreak = updateStreak();
@@ -50,29 +47,41 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
         setCurriculum(savedCurriculum);
         setStreak(savedStreak);
         setReviewQueue(dueReviews);
+        setLoading(false); // Show dashboard immediately
 
-        if (profile && savedProgress && savedCurriculum) {
-            try {
-                const adapt = await analyzeAndAdapt(profile, savedProgress, savedCurriculum);
-                setAdaptation(adapt);
-            } catch (e) {
-                console.error('Error getting adaptation:', e);
-            }
-        }
-
+        // Phase 2: Load AI features in parallel (background)
         if (profile) {
-            const memory = await queryMemoryEntries(profile.goal || 'AI learning', 3);
-            setMemoryHighlights(memory);
+            const promises = [];
 
-            const proactive = await generateProactiveSuggestions(profile, savedProgress, {
-                dueReviews: dueReviews.length,
-                memoryHighlights: memory.length,
-            });
-            setSuggestions(proactive?.suggestions || []);
+            // Adaptation analysis
+            if (savedProgress && savedCurriculum) {
+                promises.push(
+                    analyzeAndAdapt(profile, savedProgress, savedCurriculum)
+                        .then(adapt => setAdaptation(adapt))
+                        .catch(e => console.error('Adaptation error:', e))
+                );
+            }
+
+            // Memory highlights
+            promises.push(
+                queryMemoryEntries(profile.goal || 'AI learning', 3)
+                    .then(memory => setMemoryHighlights(memory))
+                    .catch(e => console.error('Memory error:', e))
+            );
+
+            // Proactive suggestions
+            promises.push(
+                generateProactiveSuggestions(profile, savedProgress, {
+                    dueReviews: dueReviews.length,
+                    memoryHighlights: 0,
+                })
+                    .then(proactive => setSuggestions(proactive?.suggestions || []))
+                    .catch(e => console.error('Suggestions error:', e))
+            );
+
+            Promise.allSettled(promises);
         }
-
-        setLoading(false);
-    };
+    }, []);
 
     const getNextLesson = () => {
         if (!curriculum?.roadmap) return null;
