@@ -272,7 +272,7 @@ export default function LearningPath({ profile, onStartLesson }) {
                                         borderTop: '1px solid var(--dark-border)'
                                     }}>
                                         <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: 'var(--space-sm)', color: 'var(--dark-text-secondary)' }}>
-                                            You'll Learn:
+                                            You{`'`}ll Learn:
                                         </div>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-xs)' }}>
                                             {item.keyTakeaways.slice(0, 3).map((takeaway, i) => (

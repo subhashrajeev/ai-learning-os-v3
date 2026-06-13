@@ -257,7 +257,7 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                                 whileTap={{ scale: 0.98 }}
                             >
                                 <Play size={20} />
-                                Start Today's Lesson
+                                Start Today{`'`}s Lesson
                                 <ChevronRight size={20} />
                             </motion.button>
                         </motion.div>
@@ -453,7 +453,7 @@ export default function Dashboard({ profile, onStartLesson, onViewChange }) {
                             Memory Highlights
                         </h4>
                         {memoryHighlights.length === 0 ? (
-                            <p style={{ color: 'var(--dark-text-secondary)' }}>As you learn, we'll keep key insights here.</p>
+                            <p style={{ color: 'var(--dark-text-secondary)' }}>As you learn, we{`'`}ll keep key insights here.</p>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                                 {memoryHighlights.map((item, i) => (

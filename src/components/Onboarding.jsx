@@ -168,7 +168,7 @@ export default function Onboarding({ onComplete }) {
                             Welcome to AI Learning OS
                         </h1>
                         <p style={{ color: 'var(--dark-text-secondary)', maxWidth: 400, margin: '0 auto' }}>
-                            Your personalized learning companion for mastering AI. Answer a few questions and we'll build a path with long-term memory and spaced repetition.
+                            Your personalized learning companion for mastering AI. Answer a few questions and we{`'`}ll build a path with long-term memory and spaced repetition.
                         </p>
 
                         <div style={{
@@ -215,7 +215,7 @@ export default function Onboarding({ onComplete }) {
                         </div>
 
                         <div className="input-group">
-                            <label className="input-label">What's your current role?</label>
+                            <label className="input-label">What{`'`}s your current role?</label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-sm)' }}>
                                 {ROLES.map((role) => (
                                     <motion.button
@@ -262,7 +262,7 @@ export default function Onboarding({ onComplete }) {
                 return (
                     <div className="onboarding-form">
                         <div className="input-group">
-                            <label className="input-label">What's your primary learning goal?</label>
+                            <label className="input-label">What{`'`}s your primary learning goal?</label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-sm)' }}>
                                 {GOALS.map((goal) => (
                                     <motion.button

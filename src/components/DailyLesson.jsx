@@ -372,7 +372,7 @@ export default function DailyLesson({ profile, dayNumber, onComplete }) {
                         <div>
                             <h4 style={{ marginBottom: 'var(--space-xs)' }}>Ready to mark complete?</h4>
                             <p style={{ fontSize: '0.875rem', color: 'var(--dark-text-secondary)' }}>
-                                Make sure you've understood the key concepts
+                                Make sure you{`'`}ve understood the key concepts
                             </p>
                         </div>
                         <motion.button
@@ -419,7 +419,7 @@ export default function DailyLesson({ profile, dayNumber, onComplete }) {
                 <div className="glass-card-elevated">
                     <h4 style={{ marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
                         <Target size={18} style={{ color: 'var(--accent)' }} />
-                        Today's Goal
+                        Today{`'`}s Goal
                     </h4>
                     <p style={{ fontSize: '0.9rem', color: 'var(--dark-text-secondary)' }}>
                         {dayInfo.action}
