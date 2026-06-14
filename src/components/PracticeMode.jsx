@@ -20,7 +20,7 @@ import {
     getDueReviewItems,
     updateReviewFromScore,
 } from '@/lib/storage';
-import { generateQuizQuestions } from '@/lib/gemini';
+import { generateQuizQuestions } from '@/lib/geminiClient';
 
 export default function PracticeMode({ profile }) {
     const [curriculum, setCurriculum] = useState(null);

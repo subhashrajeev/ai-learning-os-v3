@@ -15,7 +15,7 @@ import {
     PenLine,
 } from 'lucide-react';
 import { loadCurriculum, markDayCompleted, seedReviewFromLesson } from '@/lib/storage';
-import { generateLessonContent } from '@/lib/gemini';
+import { generateLessonContent } from '@/lib/geminiClient';
 import { createLessonMemory, upsertMemoryEntries } from '@/lib/memory';
 
 export default function DailyLesson({ profile, dayNumber, onComplete }) {

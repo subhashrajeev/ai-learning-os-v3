@@ -2,8 +2,9 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize Gemini client (Note: NEXT_PUBLIC_ variables are baked in during build time)
-const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+// Initialize Gemini client (Note: GEMINI_API_KEY is preferred on server side, NEXT_PUBLIC_ is fallback)
+const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+console.log('Loaded API key (first 10 chars):', apiKey ? apiKey.substring(0, 10) + '...' : 'MISSING');
 if (!apiKey) {
     console.warn('GEMINI_API_KEY is missing!');
 }

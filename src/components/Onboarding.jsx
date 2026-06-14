@@ -12,7 +12,7 @@ import {
     CheckCircle2
 } from 'lucide-react';
 import { saveProfile, saveProgress, saveCurriculum } from '@/lib/storage';
-import { generateCurriculum } from '@/lib/gemini';
+import { generateCurriculum } from '@/lib/geminiClient';
 
 const STEPS = [
     { id: 'welcome', title: "Let's Get Started", subtitle: "Your personalized AI learning journey begins here" },

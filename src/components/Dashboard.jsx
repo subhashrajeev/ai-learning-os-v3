@@ -22,7 +22,7 @@ import {
     getDueReviewItems,
     loadReviews,
 } from '@/lib/storage';
-import { analyzeAndAdapt, generateProactiveSuggestions } from '@/lib/gemini';
+import { analyzeAndAdapt, generateProactiveSuggestions } from '@/lib/geminiClient';
 import { queryMemoryEntries } from '@/lib/memory';
 import { getNextReviewDate } from '@/lib/spacedRepetition';
 

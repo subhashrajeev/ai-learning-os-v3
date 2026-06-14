@@ -14,7 +14,7 @@ import {
     ShieldCheck,
 } from 'lucide-react';
 import { loadProgress, loadCurriculum, saveCurriculum, getDueReviewItems } from '@/lib/storage';
-import { generateCurriculum } from '@/lib/gemini';
+import { generateCurriculum } from '@/lib/geminiClient';
 
 export default function LearningPath({ profile, onStartLesson }) {
     const [progress, setProgress] = useState(null);
