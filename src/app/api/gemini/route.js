@@ -1,3 +1,4 @@
+// Gemini Secure API Proxy Route (triggers Vercel redeploy with updated environment variables)
 import { 
     generateCurriculum, 
     generateLessonContent, 
